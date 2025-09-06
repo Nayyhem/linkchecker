@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkChecker - Vérificateur de Liens</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#161b22',
+                            200: '#0d1117',
+                            300: '#010409',
+                        },
+                        github: {
+                            gray: '#21262d',
+                            border: '#30363d',
+                            text: '#c9d1d9',
+                            blue: '#58a6ff',
+                            green: '#3fb950',
+                            red: '#f85149'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+        .terminal-window {
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        .terminal-header {
+            background-color: #21262d;
+            border-bottom: 1px solid #30363d;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+        }
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .terminal-red { background-color: #f85149; }
+        .terminal-yellow { background-color: #d29922; }
+        .terminal-green { background-color: #3fb950; }
+        .glow {
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.7);
+        }
+        .code-block {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+        .link-item {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .link-item:hover {
+            background-color: #1c2129;
+        }
+        .link-item:before {
+            content: ">";
+            position: absolute;
+            left: -20px;
+            color: #58a6ff;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .link-item:hover:before {
+            opacity: 1;
+        }
+        /* Style pour la barre d'URL unifiée */
+        .url-input-container {
+            display: flex;
+            align-items: center;
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 0;
+            overflow: hidden;
+        }
+        .url-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            color: white;
+            padding: 12px;
+            outline: none;
+            font-family: inherit;
+        }
+        .url-input::placeholder {
+            color: #8b949e;
+        }
+        .submit-button {
+            background-color: #58a6ff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+            font-family: inherit;
+        }
+        .submit-button:hover {
+            background-color: #388bfd;
+        }
+    </style>
+</head>
+<body class="bg-dark-300 text-github-text min-h-screen">
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <header class="flex items-center justify-between mb-10">
+        <div class="flex items-center">
+            <div class="w-10 h-10 rounded-md bg-github-blue flex items-center justify-center mr-3 glow">
+                <i class="fas fa-link text-white"></i>
+            </div>
+            <h1 class="text-2xl font-semibold">LinkChecker<span class="text-github-blue">.dev</span></h1>
+        </div>
+        <div class="flex space-x-2">
+            <div class="w-3 h-3 rounded-full bg-github-red"></div>
+            <div class="w-3 h-3 rounded-full bg-github-yellow"></div>
+            <div class="w-3 h-3 rounded-full bg-github-green"></div>
+        </div>
+    </header>
+
+    <div class="mb-8">
+        <h2 class="text-xl mb-4">$ Vérifiez les liens morts sur votre site</h2>
+        <p class="text-gray-400 mb-6">Entrez l'URL complète de votre site web (avec http:// ou https://) pour analyser tous les liens et détecter ceux qui sont brisés.</p>
+
+        <div class="terminal-window bg-dark-200">
+            <div class="terminal-header">
+                <div class="terminal-button terminal-red"></div>
+                <div class="terminal-button terminal-yellow"></div>
+                <div class="terminal-button terminal-green"></div>
+                <span class="text-sm ml-2">bash - vérification de liens</span>
+            </div>
+            <div class="p-6">
+                <form method="POST" action="/">
+                    <div class="url-input-container">
+                        <input
+                                type="text"
+                                name="url"
+                                placeholder="http://votresite.com ou https://votresite.com"
+                                class="url-input"
+                                required
+                        >
+                        <button type="submit" class="submit-button">
+                            <i class="fas fa-terminal mr-2"></i> Exécuter
+                        </button>
+                    </div>
+                </form>
+                <div class="text-sm text-gray-400 flex items-center mt-3">
+                    <i class="fas fa-info-circle mr-2"></i> Commencez par http:// ou https:// puis entrez votre URL
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{if .Analyzed}}
+    {{if eq (len .DeadLinks) 0}}
+    <div class="terminal-window bg-dark-200 mt-10">
+        <div class="terminal-header">
+            <div class="terminal-button terminal-red"></div>
+            <div class="terminal-button terminal-yellow"></div>
+            <div class="terminal-button terminal-green"></div>
+            <span class="text-sm ml-2">résultats de l'analyse</span>
+        </div>
+
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium">
+                    <i class="fas fa-check-circle text-github-green mr-2"></i>Analyse terminée
+                </h3>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-github-green text-white">
+                        Aucune erreur
+                    </span>
+            </div>
+
+            <div class="code-block mt-4">
+                <div class="text-center py-8">
+                    <i class="fas fa-check-circle text-github-green text-4xl mb-4"></i>
+                    <p class="text-github-green text-lg">Aucun lien mort trouvé ✅</p>
+                    <p class="text-gray-400 text-sm mt-2">Tous les liens de votre site fonctionnent correctement</p>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-github-border flex justify-between">
+                <div class="text-sm text-gray-400">
+                    <i class="fas fa-history mr-1"></i> Analyse terminée
+                </div>
+                <button onclick="window.location.href='/'" class="inline-flex items-center px-3 py-1 border border-github-border rounded text-sm text-white bg-dark-100 hover:bg-dark-300">
+                    <i class="fas fa-redo mr-1"></i> Nouvelle analyse
+                </button>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="terminal-window bg-dark-200 mt-10">
+        <div class="terminal-header">
+            <div class="terminal-button terminal-red"></div>
+            <div class="terminal-button terminal-yellow"></div>
+            <div class="terminal-button terminal-green"></div>
+            <span class="text-sm ml-2">résultats de l'analyse</span>
+        </div>
+
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium">
+                    <i class="fas fa-file-code text-github-blue mr-2"></i>Liens morts détectés
+                </h3>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-github-red text-white">
+                        {{len .DeadLinks}} erreur(s)
+                    </span>
+            </div>
+
+            <div class="code-block mt-4">
+                <ul class="space-y-3">
+                    {{range .DeadLinks}}
+                    <li class="link-item pl-6 py-2">
+                        <div class="flex items-start">
+                            <span class="text-github-red mr-2">→</span>
+                            <span class="text-github-red break-all">{{.}}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 ml-4">
+                            <i class="fas fa-clock mr-1"></i>Status: 404 - Lien non trouvé
+                        </div>
+                    </li>
+                    {{end}}
+                </ul>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-github-border flex justify-between">
+                <div class="text-sm text-gray-400">
+                    <i class="fas fa-history mr-1"></i> Analyse terminée
+                </div>
+                <button onclick="window.location.href='/'" class="inline-flex items-center px-3 py-1 border border-github-border rounded text-sm text-white bg-dark-100 hover:bg-dark-300">
+                    <i class="fas fa-redo mr-1"></i> Nouvelle analyse
+                </button>
+            </div>
+        </div>
+    </div>
+    {{end}}
+    {{else if .Error}}
+    <div class="terminal-window bg-dark-200 mt-10">
+        <div class="terminal-header">
+            <div class="terminal-button terminal-red"></div>
+            <div class="terminal-button terminal-yellow"></div>
+            <div class="terminal-button terminal-green"></div>
+            <span class="text-sm ml-2">erreur</span>
+        </div>
+
+        <div class="p-6">
+            <div class="code-block">
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-triangle text-github-red text-4xl mb-4"></i>
+                    <p class="text-github-red text-lg">{{.Error}}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="terminal-window bg-dark-200 mt-10">
+        <div class="terminal-header">
+            <div class="terminal-button terminal-red"></div>
+            <div class="terminal-button terminal-yellow"></div>
+            <div class="terminal-button terminal-green"></div>
+            <span class="text-sm ml-2">comment utiliser</span>
+        </div>
+        <div class="p-6">
+            <div class="code-block">
+                    <pre class="text-sm text-gray-300">
+<span class="text-github-green"># Exemple d'utilisation:</span>
+<span class="text-github-blue">$</span> curl -X POST -d "url=https://votresite.com" https://linkchecker.dev/
+
+<span class="text-github-green"># Format de sortie:</span>
+<span class="text-github-blue">></span> [ERROR] https://votresite.com/lien-cassé - 404 Not Found
+<span class="text-github-blue">></span> [SUCCESS] https://votresite.com/page-valide - 200 OK
+
+<span class="text-github-green"># Options disponibles:</span>
+<span class="text-github-blue">--depth</span>       Niveau de profondeur de l'analyse (par défaut: 2)
+<span class="text-github-blue">--timeout</span>     Délai d'attente pour chaque requête (par défaut: 5s)
+<span class="text-github-blue">--workers</span>     Nombre de workers simultanés (par défaut: 10)</pre>
+            </div>
+        </div>
+    </div>
+    {{end}}
+
+    <footer class="mt-12 pt-8 border-t border-github-border text-center text-gray-500 text-sm">
+        <p>Développé avec <i class="fas fa-heart text-github-red"></i> pour les développeurs - LinkChecker v1.0</p>
+        <p class="mt-2">
+            <a href="https://github.com/Nayyhem" class="text-github-blue hover:underline"><i class="fab fa-github mr-1"></i>Github</a>
+        </p>
+    </footer>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const terminalText = document.querySelector('h2.text-xl');
+        const resultsSection = document.querySelector('span');
+        let hasResults = false;
+
+        if (resultsSection) {
+            const spans = document.querySelectorAll('span');
+            for (let span of spans) {
+                if (span.textContent.includes('résultats de l\'analyse')) {
+                    hasResults = true;
+                    break;
+                }
+            }
+        }
+
+        if (terminalText && !hasResults) {
+            const originalText = terminalText.textContent;
+            terminalText.textContent = '';
+
+            let i = 0;
+            function typeWriter() {
+                if (i < originalText.length) {
+                    terminalText.textContent += originalText.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 50);
+                }
+            }
+
+            setTimeout(typeWriter, 500);
+        }
+    });
+</script>
+</body>
+</html>
