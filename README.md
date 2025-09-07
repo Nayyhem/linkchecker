@@ -27,15 +27,13 @@
 ## 📂 Structure du projet
 
 ```text
-link-checker/
+LinkChecker/
 ├─ main.go                  # Point d'entrée du serveur web
-├─ handler.go               # Contient le handler HTTP
 ├─ checker/                 # Package pour la vérification des liens
 │   └─ checker.go           # Fonctions: isLinkAlive, checkAllLinks, makeAbsolute, findLinks, CheckLinkPage
 ├─ templates/
 │   └─ index.html           # Template HTML avec Tailwind CSS
-├─ go.mod                   # Fichier de module Go
-└─ README.md                # Ce fichier
+└─ go.mod                   # Fichier de module Go
 ```
 
 ---
@@ -45,8 +43,8 @@ link-checker/
 1. **Cloner le projet**
 
 ```bash
-git clone https://github.com/votre-utilisateur/link-checker.git
-cd link-checker
+git clone https://github.com/votre-utilisateur/linkchecker.git
+cd linkchecker
 ```
 
 2. **Installer les dépendances**
